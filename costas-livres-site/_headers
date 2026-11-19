@@ -1,0 +1,21 @@
+# Ficheiro de cache/compressão para quando a página NÃO estiver só no GitHub
+# Pages puro — serve para Cloudflare Pages ou Netlify (lido automaticamente).
+# O GitHub Pages por si só ignora este ficheiro e não permite headers
+# personalizados; por isso o passo 9 do pedido (Brotli + cache longo) só
+# se resolve pondo o Cloudflare como proxy (nuvem laranja) na frente do
+# domínio, ou mudando a hospedagem para Cloudflare Pages/Netlify.
+
+/*.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.png
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.svg
+  Cache-Control: public, max-age=31536000, immutable
+
+/index.html
+  Cache-Control: public, max-age=300, must-revalidate
