@@ -145,9 +145,16 @@ svg.i{width:1em;height:1em;flex:none}
 .player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .player-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .35s ease}
 .player-poster.hidden{opacity:0;pointer-events:none}
-.unmute{position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;cursor:pointer;background:transparent;display:grid;place-items:end end}
-.unmute .ic-snd{box-sizing:border-box;width:46px;height:46px;margin:0 14px 14px 0;padding:11px;border-radius:50%;background:rgba(11,18,32,.68);color:#fff;box-shadow:0 6px 18px -6px rgba(0,0,0,.6)}
+.unmute{position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;cursor:pointer;display:grid;place-items:center;align-content:center;gap:12px;
+  background:radial-gradient(ellipse at center,rgba(11,18,32,.46),rgba(11,18,32,.18) 62%,rgba(11,18,32,.06))}
+.unmute .ic-snd{box-sizing:border-box;width:clamp(84px,22vw,116px);height:clamp(84px,22vw,116px);margin:0;padding:clamp(19px,5.2vw,27px);
+  border-radius:50%;background:rgba(11,18,32,.76);border:2px solid rgba(255,255,255,.92);color:#fff;box-shadow:0 12px 34px -10px rgba(0,0,0,.8)}
+.unmute .lbl{font:800 clamp(.92rem,3.2vw,1.08rem)/1.2 var(--sans);color:#fff;letter-spacing:-.01em;text-shadow:0 2px 12px rgba(0,0,0,.85)}
 .unmute.hidden{display:none}
+@media (prefers-reduced-motion:no-preference){
+  .unmute .ic-snd{animation:pulsaSom 2.4s ease-in-out infinite}
+  @keyframes pulsaSom{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+}
 .hero .intro{max-width:52ch;margin:20px auto 0;color:var(--ink-2);font-size:1.04rem}
 .hero .act{margin-top:24px}
 .hero .act .fine{margin-top:12px}
@@ -443,6 +450,7 @@ footer small{font-size:.78rem;color:var(--ink-2);line-height:1.6;max-width:62ch}
         <path d="M15.3 9.3a4 4 0 0 1 0 5.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
         <line x1="3" y1="21" x2="21" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
+      <span class="lbl">Carregue para ouvir</span>
     </button>
   </div>
   <p class="intro">Na sala de casa. Começa com 3 perguntas que escolhem a sua sequência. Depois é carregar no play. Sem aparelhos, sem ginásio, sem horários.</p>
@@ -780,10 +788,25 @@ footer small{font-size:.78rem;color:var(--ink-2);line-height:1.6;max-width:62ch}
   //    iframe pesado do YouTube só é criado por JS depois do essencial já
   //    ter saído (requestIdleCallback, com setTimeout de reserva pra quem
   //    não tem isso, como o Safari/iOS). Já pede autoplay mudo e legendas
-  //    desligadas (cc_load_policy=0). O ícone no canto ativa o som; se o
+  //    desligadas (cc_load_policy=0 + unloadModule). O ícone no meio ativa o som; se o
   //    clique vier antes do iframe existir, cria-o na hora.
   var playerBox=document.getElementById('player'),poster=document.getElementById('playerPoster'),unmute=document.getElementById('unmute');
   var YT_ID='DHnikrgvcFQ',frame=null,frameReady=false;
+  var cmd=function(func,args){
+    if(!frame||!frame.contentWindow)return;
+    frame.contentWindow.postMessage(JSON.stringify({event:'command',func:func,args:args||[]}),'*');
+  };
+  // As legendas automaticas do YouTube aparecem mesmo com cc_load_policy=0:
+  // so saem pela API, depois do player existir. Repete porque o modulo das
+  // legendas as vezes so entra depois do video comecar a tocar.
+  var desligaLegendas=function(){
+    [0,500,1200,2500,5000].forEach(function(t){setTimeout(function(){
+      cmd('setOption',['captions','track',{}]);
+      cmd('setOption',['cc','track',{}]);
+      cmd('unloadModule',['captions']);
+      cmd('unloadModule',['cc']);
+    },t)});
+  };
   var loadVSL=function(){
     if(frame)return;
     frame=document.createElement('iframe');
@@ -796,6 +819,7 @@ footer small{font-size:.78rem;color:var(--ink-2);line-height:1.6;max-width:62ch}
     frame.addEventListener('load',function(){
       frameReady=true;
       if(poster)poster.classList.add('hidden');
+      desligaLegendas();
     });
     playerBox.insertBefore(frame,poster||playerBox.firstChild);
   };
@@ -806,9 +830,7 @@ footer small{font-size:.78rem;color:var(--ink-2);line-height:1.6;max-width:62ch}
   if(unmute)unmute.addEventListener('click',function(){
     if(!frame)loadVSL();
     var tryUnmute=function(){
-      if(!frame||!frame.contentWindow)return;
-      var cmd=function(func){frame.contentWindow.postMessage(JSON.stringify({event:'command',func:func,args:[]}),'*')};
-      cmd('unMute');cmd('playVideo');
+      cmd('unMute');cmd('playVideo');desligaLegendas();
     };
     if(frameReady)tryUnmute();else setTimeout(tryUnmute,450);
     unmute.classList.add('hidden');
