@@ -2,6 +2,9 @@
 <html lang="pt-PT">
 <head>
 <meta charset="utf-8">
+<!-- Utmify: o mais alto possível no <head>, antes de qualquer pixel,
+     para capturar a UTM da visita assim que a página abre. -->
+<script src="https://cdn.utmify.com.br/scripts/utms/latest.js" data-utmify-prevent-subids async defer></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Método Costas Livres 7-7-7</title>
 <meta name="description" content="7 minutos por dia, 7 movimentos, 7 dias, na sala de casa. 14,90 €, pagamento único, acesso vitalício, garantia de 14 dias.">
@@ -31,6 +34,9 @@
 <link rel="dns-prefetch" href="https://www.youtube.com">
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
 <link rel="dns-prefetch" href="https://i.ytimg.com">
+<!-- capa da VSL: carrega já, é o que aparece primeiro no herói (facade),
+     o iframe pesado do YouTube só entra depois, sem travar o LCP -->
+<link rel="preload" as="image" href="https://i.ytimg.com/vi/DHnikrgvcFQ/maxresdefault.jpg" fetchpriority="high">
 
 <!-- ======================================================================
      ANTES DE PUBLICAR (3 coisas)
@@ -52,8 +58,11 @@
 
      3) E-MAIL DE SUPORTE: procura "SUPORTE_EMAIL" na garantia e troca.
 
-     VÍDEO: é o <iframe id="vslFrame"> lá no herói. Para trocar, troca só o
-     ID do YouTube no src dele (a parte depois de "embed/" e antes de "?").
+     VÍDEO: para trocar, troca o ID do YouTube na variável YT_ID lá no
+     <script> do fim da página (é só um sítio agora) e também no link
+     rel="preload" da capa, logo acima. O vídeo usa "fachada": no HTML só
+     entra a capa (thumbnail do YouTube); o iframe pesado só é criado por
+     JS depois da página carregar, pra não atrasar o LCP.
 
      Imagens: esta página usa as tuas (assets/...). Põe este index.html na
      mesma pasta do projecto. Se uma imagem faltar, o bloco dela desaparece
@@ -134,8 +143,10 @@ svg.i{width:1em;height:1em;flex:none}
 .three span{font-size:.78rem;font-weight:700;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em}
 .player{position:relative;aspect-ratio:16/9;max-width:720px;width:100%;margin:22px auto 0;border-radius:22px;overflow:hidden;background:#000;box-shadow:0 26px 50px -30px rgba(14,59,67,.7)}
 .player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-.unmute{position:absolute;inset:0;width:100%;height:100%;border:0;padding:0 0 16px;cursor:pointer;background:transparent;display:grid;place-items:end center}
-.unmute em{font-style:normal;font-size:.95rem;font-weight:700;color:#fff;background:rgba(11,18,32,.72);border-radius:999px;padding:6px 14px}
+.player-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .35s ease}
+.player-poster.hidden{opacity:0;pointer-events:none}
+.unmute{position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;cursor:pointer;background:transparent;display:grid;place-items:end end}
+.unmute .ic-snd{box-sizing:border-box;width:46px;height:46px;margin:0 14px 14px 0;padding:11px;border-radius:50%;background:rgba(11,18,32,.68);color:#fff;box-shadow:0 6px 18px -6px rgba(0,0,0,.6)}
 .unmute.hidden{display:none}
 .hero .intro{max-width:52ch;margin:20px auto 0;color:var(--ink-2);font-size:1.04rem}
 .hero .act{margin-top:24px}
@@ -419,17 +430,24 @@ footer small{font-size:.78rem;color:var(--ink-2);line-height:1.6;max-width:62ch}
   <h1>As costas tiraram-lhe a vida aos bocadinhos. Está na hora de a ir <span class="hl">buscar de volta.</span></h1>
   <div class="three"><div><strong>7</strong><span>minutos<br>por dia</span></div><div><strong>7</strong><span>movimentos</span></div><div><strong>7</strong><span>dias</span></div></div>
 
-  <!-- VSL: YouTube, começa sozinho (sem som) e sem os comandos do YouTube à vista.
-       Para trocar o vídeo, troca só o ID aqui no src (a parte depois de "embed/" e antes de "?"). -->
+  <!-- VSL: fachada (capa do YouTube) primeiro, pra não atrasar o LCP. O
+       iframe de verdade só é criado por JS depois da página carregar, já
+       com autoplay mudo e legendas desligadas. Clicar no ícone ativa o som.
+       Para trocar o vídeo, troca o ID na variável YT_ID no <script> do fim
+       da página (e no link rel="preload" da capa, lá no <head>). -->
   <div class="player yt" id="player">
-    <iframe id="vslFrame" src="https://www.youtube.com/embed/DHnikrgvcFQ?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&playsinline=1&enablejsapi=1" title="Vídeo de apresentação do Método Costas Livres 7-7-7" allow="autoplay; encrypted-media; picture-in-picture" loading="eager" frameborder="0"></iframe>
+    <img class="player-poster" id="playerPoster" src="https://i.ytimg.com/vi/DHnikrgvcFQ/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/DHnikrgvcFQ/hqdefault.jpg'" alt="" width="1280" height="720" loading="eager" fetchpriority="high">
     <button class="unmute" id="unmute" type="button" aria-label="Ativar som">
-      <em>Clique para ativar o som</em>
+      <svg class="ic-snd" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 9v6h4l5 5V4L8 9H4z" fill="currentColor"/>
+        <path d="M15.3 9.3a4 4 0 0 1 0 5.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        <line x1="3" y1="21" x2="21" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
     </button>
   </div>
   <p class="intro">Na sala de casa. Começa com 3 perguntas que escolhem a sua sequência. Depois é carregar no play. Sem aparelhos, sem ginásio, sem horários.</p>
   <div class="act">
-    <a class="cta" href="#CHECKOUT_PENDENTE">QUERO AS MINHAS COSTAS LIVRES <svg><use href="#ar"/></svg></a>
+    <a class="cta" href="#CHECKOUT_PENDENTE">Quero começar já <svg><use href="#ar"/></svg></a>
     <p class="fine">14,90 € · pagamento único · acesso imediato e vitalício · garantia de 14 dias</p>
   </div>
 </div></header>
@@ -516,7 +534,7 @@ footer small{font-size:.78rem;color:var(--ink-2);line-height:1.6;max-width:62ch}
   <p class="opinion">A nossa opinião, sem rodeios: se o conselho de sempre era ficar parado, está na hora de experimentar o contrário.</p>
   <p class="not-lack">Não é falta de força de vontade. Não é "da idade". É falta de um ponto de partida simples, seguro e na ordem certa.</p>
   <p class="refs"><span id="ref1">¹ NICE NG59, Low back pain and sciatica in over 16s (<a href="https://www.nice.org.uk/guidance/ng59" rel="noopener" target="_blank">nice.org.uk/guidance/ng59</a>).</span> <span id="ref2">² OMS, Guideline for non-surgical management of chronic primary low back pain in adults, 2023 (<a href="https://www.who.int/publications/i/item/9789240081789" rel="noopener" target="_blank">who.int</a>).</span> Referências de orientação clínica geral: não avaliaram nem endossam o Método Costas Livres.</p>
-  <div class="push"><a class="cta" href="#CHECKOUT_PENDENTE">QUERO AS MINHAS COSTAS LIVRES <svg><use href="#ar"/></svg></a>
+  <div class="push"><a class="cta" href="#CHECKOUT_PENDENTE">Quero começar já <svg><use href="#ar"/></svg></a>
     <p class="fine">14,90 € · pagamento único · garantia de 14 dias</p></div>
 </div></section>
 
@@ -596,7 +614,7 @@ footer small{font-size:.78rem;color:var(--ink-2);line-height:1.6;max-width:62ch}
     <div class="mod"><span class="ibox"><svg><use href="#cal"/></svg></span><div class="tx"><small>MÓDULO 4</small><h3>Plano 30 Dias Costas Fortes</h3><p>O que fazer ao 8.º dia, para não voltar à estaca zero. 12 sessões guiadas de ~15 min: 3 por semana, durante 4 semanas, sempre a subir um bocadinho. Foco em abdominal profundo, glúteos e ancas. Versão sem material e versão com elástico (mini band, opcional). Mais um plano de manutenção de 2 sessões por semana.</p></div></div>
     <div class="mod"><span class="ibox"><svg><use href="#chart"/></svg></span><div class="tx"><small>MÓDULO 6</small><h3>Folha de Registo 0–10</h3><p>Para imprimir ou preencher no telemóvel. Versão dos 7 dias e versão dos 30 dias.</p></div></div>
   </div>
-  <div class="push"><a class="cta" href="#CHECKOUT_PENDENTE">QUERO AS MINHAS COSTAS LIVRES <svg><use href="#ar"/></svg></a></div>
+  <div class="push"><a class="cta" href="#CHECKOUT_PENDENTE">Quero começar já <svg><use href="#ar"/></svg></a></div>
 </div></section>
 
 <!-- 7. PARA QUEM É / NÃO É -->
@@ -682,7 +700,7 @@ footer small{font-size:.78rem;color:var(--ink-2);line-height:1.6;max-width:62ch}
         <li><svg><use href="#ck"/></svg><span>3 bónus incluídos</span></li>
         <li><svg><use href="#ck"/></svg><span>Acesso imediato e vitalício</span></li>
       </ul>
-      <a class="cta" href="#CHECKOUT_PENDENTE">SIM, QUERO AS MINHAS COSTAS A MEXER OUTRA VEZ: 14,90 € <svg><use href="#ar"/></svg></a>
+      <a class="cta" href="#CHECKOUT_PENDENTE">Sim, quero! <svg><use href="#ar"/></svg></a>
       <div class="pay"><span>MB WAY</span><span>Multibanco</span><span>Cartão</span></div>
     </div>
   </div>
@@ -726,7 +744,7 @@ footer small{font-size:.78rem;color:var(--ink-2);line-height:1.6;max-width:62ch}
 
 <section class="sec dark final"><div class="wrap">
   <h2>Sete minutos. Na sala. Hoje.</h2>
-  <a class="cta" href="#CHECKOUT_PENDENTE">QUERO COMEÇAR O MÉTODO COSTAS LIVRES: 14,90 € <svg><use href="#ar"/></svg></a>
+  <a class="cta" href="#CHECKOUT_PENDENTE">Sim, quero! <svg><use href="#ar"/></svg></a>
   <p class="trust"><span>Acesso imediato e vitalício</span><span>Pagamento único</span><span>Tudo incluído</span><span>Garantia de 14 dias</span></p>
   <div class="ps">
     <p><b>P.S.</b> Se ainda está a pensar, faça o teste do sapato: amanhã de manhã, repare em quanto custa dobrar-se para apertar os sapatos. Se a resposta for "mais do que devia", já sabe porque é que está aqui.</p>
@@ -747,7 +765,7 @@ footer small{font-size:.78rem;color:var(--ink-2);line-height:1.6;max-width:62ch}
 </div></footer>
 
 <div class="sticky" id="sticky"><div class="p"><b>14,90 €</b><small>pagamento único</small></div>
-  <a class="cta" href="#CHECKOUT_PENDENTE">QUERO COMEÇAR <svg><use href="#ar"/></svg></a></div>
+  <a class="cta" href="#CHECKOUT_PENDENTE">Quero começar <svg><use href="#ar"/></svg></a></div>
 
 <script>
 (function(){
@@ -758,13 +776,41 @@ footer small{font-size:.78rem;color:var(--ink-2);line-height:1.6;max-width:62ch}
     if(img.complete&&img.naturalWidth===0&&img.getAttribute('loading')!=='lazy')gone();
   });
 
-  // 2) VSL: o vídeo (YouTube) já começa sozinho, mudo. Um clique em cima
-  //    dele ativa o som (comando enviado ao player via postMessage) e
-  //    esconde a dica "clique para ativar o som".
-  var frame=document.getElementById('vslFrame'),unmute=document.getElementById('unmute');
-  if(frame&&unmute)unmute.addEventListener('click',function(){
-    var cmd=function(func){frame.contentWindow.postMessage(JSON.stringify({event:'command',func:func,args:[]}),'*')};
-    cmd('unMute');cmd('playVideo');
+  // 2) VSL: fachada. Só a capa (imagem) carrega junto com a página; o
+  //    iframe pesado do YouTube só é criado por JS depois do essencial já
+  //    ter saído (requestIdleCallback, com setTimeout de reserva pra quem
+  //    não tem isso, como o Safari/iOS). Já pede autoplay mudo e legendas
+  //    desligadas (cc_load_policy=0). O ícone no canto ativa o som; se o
+  //    clique vier antes do iframe existir, cria-o na hora.
+  var playerBox=document.getElementById('player'),poster=document.getElementById('playerPoster'),unmute=document.getElementById('unmute');
+  var YT_ID='DHnikrgvcFQ',frame=null,frameReady=false;
+  var loadVSL=function(){
+    if(frame)return;
+    frame=document.createElement('iframe');
+    frame.id='vslFrame';
+    frame.src='https://www.youtube.com/embed/'+YT_ID+'?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&cc_load_policy=0&disablekb=1&fs=0&playsinline=1&enablejsapi=1';
+    frame.title='Vídeo de apresentação do Método Costas Livres 7-7-7';
+    frame.setAttribute('allow','autoplay; encrypted-media; picture-in-picture');
+    frame.loading='eager';
+    frame.frameBorder='0';
+    frame.addEventListener('load',function(){
+      frameReady=true;
+      if(poster)poster.classList.add('hidden');
+    });
+    playerBox.insertBefore(frame,poster||playerBox.firstChild);
+  };
+  if(playerBox){
+    if('requestIdleCallback' in window)requestIdleCallback(loadVSL,{timeout:2500});
+    else setTimeout(loadVSL,1200);
+  }
+  if(unmute)unmute.addEventListener('click',function(){
+    if(!frame)loadVSL();
+    var tryUnmute=function(){
+      if(!frame||!frame.contentWindow)return;
+      var cmd=function(func){frame.contentWindow.postMessage(JSON.stringify({event:'command',func:func,args:[]}),'*')};
+      cmd('unMute');cmd('playVideo');
+    };
+    if(frameReady)tryUnmute();else setTimeout(tryUnmute,450);
     unmute.classList.add('hidden');
   });
 
