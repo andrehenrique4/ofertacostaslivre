@@ -807,6 +807,12 @@ footer small{font-size:.78rem;color:var(--ink-2);line-height:1.6;max-width:62ch}
     if(!frame||!frame.contentWindow)return;
     frame.contentWindow.postMessage(JSON.stringify({event:'command',func:func,args:args||[]}),'*');
   };
+  // O player so aceita comandos (unMute, playVideo) depois de receber este
+  // "listening". Sem ele o unMute era ignorado e o som nunca abria.
+  var ouvir=function(){
+    if(!frame||!frame.contentWindow)return;
+    frame.contentWindow.postMessage(JSON.stringify({event:'listening',id:1,channel:'widget'}),'*');
+  };
   // As legendas automaticas do YouTube aparecem mesmo com cc_load_policy=0:
   // so saem pela API, depois do player existir. Repete porque o modulo das
   // legendas as vezes so entra depois do video comecar a tocar.
@@ -830,6 +836,7 @@ footer small{font-size:.78rem;color:var(--ink-2);line-height:1.6;max-width:62ch}
     frame.addEventListener('load',function(){
       frameReady=true;
       if(poster)poster.classList.add('hidden');
+      ouvir();
       desligaLegendas();
     });
     playerBox.insertBefore(frame,poster||playerBox.firstChild);
@@ -841,7 +848,10 @@ footer small{font-size:.78rem;color:var(--ink-2);line-height:1.6;max-width:62ch}
   if(unmute)unmute.addEventListener('click',function(){
     if(!frame)loadVSL();
     var tryUnmute=function(){
-      cmd('unMute');cmd('playVideo');desligaLegendas();
+      ouvir();
+      cmd('unMute');cmd('setVolume',[100]);cmd('playVideo');
+      setTimeout(function(){ouvir();cmd('unMute');cmd('playVideo');},400);
+      desligaLegendas();
     };
     if(frameReady)tryUnmute();else setTimeout(tryUnmute,450);
     unmute.classList.add('hidden');
